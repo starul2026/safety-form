@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>동아리축제 안전교육 확인서 관리</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 엑셀 및 PDF 라이브러리 추가 -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
+        .signature-canvas { touch-action: none; background-color: #ffffff; cursor: crosshair; }
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
+        .tab-inactive { color: #6b7280; }
+        .tab-inactive:hover { color: #374151; }
+        /* Loader */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Hide scrollbar for cleaner UI on mobile */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+  <script type="module" crossorigin src="./assets/index-BOs2ke0A.js"></script>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center">
+                    <i class="fa-solid fa-shield-halved text-blue-600 text-2xl mr-2"></i>
+                    <span class="font-bold text-xl tracking-tight">안전교육 시스템</span>
+                </div>
+                <div class="flex space-x-4 md:space-x-8">
+                    <button id="tab-user" class="tab-active px-1 py-5 text-sm md:text-base transition-colors" onclick="switchTab('user')">제출용 모드</button>
+                    <button id="tab-admin" class="tab-inactive px-1 py-5 text-sm md:text-base transition-colors" onclick="switchTab('admin')">관리자 모드</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+        
+        <section id="view-user" class="block animate-fade-in">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">안전교육 확인서 제출</h2>
+                        <p class="mt-1 text-sm text-gray-500">동아리 축제 참여를 위한 안전교육 이수 내역을 작성해주세요.</p>
+                    </div>
+                    <div id="page-indicator" class="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">1 / 2 페이지</div>
+                </div>
+
+                <form id="submission-form" onsubmit="event.preventDefault(); nextStep();" class="p-6 md:p-8">
+                    
+                    <!-- Page 1 Content -->
+                    <div id="form-page-1" class="space-y-6 block">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Category -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">분야 <span class="text-red-500">*</span></label>
+                                <select id="input-category" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" onchange="updateClubDropdowns()">
+                                    <option value="">선택해주세요</option>
+                                    <option value="공연">공연</option>
+                                    <option value="부스">부스</option>
+                                    <option value="현장체험">현장체험</option>
+                                    <option value="모니터링단">모니터링단</option>
+                                    <option value="일일아티스탭">일일아티스탭</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Searchable Club Name -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">동아리명 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="text" id="input-club-search" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors disabled:bg-gray-100" placeholder="분야를 먼저 선택해주세요" disabled onfocus="showClubList()" onkeyup="filterClubList()" onblur="setTimeout(()=>hideClubList(), 200)">
+                                    <input type="hidden" id="input-club">
+                                    <ul id="club-dropdown-list" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden mt-1"></ul>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">※ 목록에 없다면 관리자에게 문의하세요.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">소속 <span class="text-red-500">*</span></label>
+                                <input type="text" id="input-affiliation" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" placeholder="예: 시흥청소년수련관">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">행사명 <span class="text-red-500">*</span></label>
+                                <!-- 기본값 적용 -->
+                                <input type="text" id="input-event-name" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" value="2026년 제11회 시흥시청소년동아리축제 SIYF">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">행사장 <span class="text-red-500">*</span></label>
+                                <input type="text" id="input-venue" required readonly class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none" value="시흥시청">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">교육장소 <span class="text-red-500">*</span></label>
+                                <input type="text" id="input-edu-location" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" placeholder="안전교육 진행 장소 입력">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">교육일자 <span class="text-red-500">*</span></label>
+                                <input type="date" id="input-date" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">교육시간 <span class="text-red-500">*</span></label>
+                                <input type="text" id="input-time" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" placeholder="예: 14:00 ~ 15:00">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1 mt-6">축제 일정 <span class="text-red-500">*</span></label>
+                            <!-- 기본값 적용 -->
+                            <input type="text" id="input-schedule" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" value="2026. 10. 17.(토)">
+                        </div>
+
+                        <div class="space-y-4 border-t border-gray-100 pt-6">
+                            <div>
+                                <div class="flex justify-between items-end mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">안전교육 내용 확인 <span class="text-red-500">*</span></label>
+                                    <span class="text-xs text-blue-600 font-medium">※ 항목(공통 5 + 분야 5)을 모두 읽고 체크해주세요.</span>
+                                </div>
+                                <div id="checklist-container" class="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-3">
+                                    <p class="text-sm text-gray-500 text-center py-4">상단의 '분야'를 선택하면 교육 체크리스트 항목이 나타납니다.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">안전교육 증빙 사진 <span class="text-red-500">*</span></label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="input-photo" class="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6" id="photo-placeholder">
+                                        <i class="fa-solid fa-camera text-3xl text-gray-400 mb-3"></i>
+                                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">클릭하여 사진 업로드</span></p>
+                                        <p class="text-xs text-gray-500">자동으로 1MB 이하로 압축됩니다.</p>
+                                    </div>
+                                    <img id="photo-preview" class="hidden absolute inset-0 w-full h-full object-contain bg-black/5" />
+                                    <input id="input-photo" type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)" />
+                                </label>
+                            </div>
+                            <input type="hidden" id="photo-base64" required>
+                        </div>
+
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-md shadow-sm transition-colors flex items-center">
+                                다음 단계 <i class="fa-solid fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="form-page-2" class="hidden p-6 md:p-8 space-y-6">
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-100 mb-4">
+                        <p class="text-sm text-blue-800"><i class="fa-solid fa-circle-info mr-2"></i>교육에 참석한 모든 인원의 이름, 연령, 성별을 선택하고 서명을 입력해주세요. 서명은 터치나 마우스를 이용해 직접 그려주시면 됩니다.</p>
+                    </div>
+
+                    <div id="signature-container" class="space-y-4">
+                        <!-- Signatures will be generated here -->
+                    </div>
+
+                    <div class="flex justify-center mt-6">
+                        <button type="button" onclick="addSignatureRow()" class="flex items-center text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-full transition-colors">
+                            <i class="fa-solid fa-plus mr-2"></i> 인원 추가하기
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between pt-8 border-t border-gray-100">
+                        <button type="button" onclick="prevStep()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2.5 px-6 rounded-md transition-colors">
+                            <i class="fa-solid fa-arrow-left mr-2"></i> 이전
+                        </button>
+                        <button type="button" id="btn-final-submit" onclick="submitForm()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-8 rounded-md shadow-sm transition-colors flex items-center">
+                            제출완료 <i class="fa-solid fa-check ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Success Message Screen -->
+            <div id="success-screen" class="hidden bg-white rounded-xl shadow-md p-10 text-center animate-fade-in">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-check text-4xl text-green-500"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">제출이 완료되었습니다!</h2>
+                <p class="text-gray-600 mb-8">안전교육 확인서가 성공적으로 전송되었습니다.</p>
+                <button onclick="resetForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-md transition-colors">
+                    새로운 양식 작성하기
+                </button>
+            </div>
+        </section>
+
+        <section id="view-admin" class="hidden animate-fade-in space-y-6">
+            
+            <!-- Admin Header & Upload -->
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">참여 동아리 명단 관리</h2>
+                    <p class="text-sm text-gray-500 mt-1">엑셀 파일을 업로드하여 동아리 명단을 초기화하거나 업데이트합니다.</p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap justify-end">
+                    <button onclick="showResetConfirm()" class="text-sm text-red-500 hover:text-red-700 font-medium mr-2 flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>데이터 초기화</button>
+                    <button onclick="downloadTemplate()" class="text-sm text-blue-600 hover:text-blue-800 underline mr-2">엑셀 양식 다운로드</button>
+                    <label class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md cursor-pointer transition-colors shadow-sm text-sm font-medium flex items-center">
+                        <i class="fa-solid fa-file-excel mr-2"></i> 엑셀 업로드
+                        <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">총 동아리 수</p>
+                        <p class="text-2xl font-bold text-gray-900" id="stat-total">0</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-file-circle-check"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">제출 완료</p>
+                        <p class="text-2xl font-bold text-gray-900" id="stat-submitted">0</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-file-circle-xmark"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">미제출 (대기중)</p>
+                        <p class="text-2xl font-bold text-gray-900" id="stat-pending">0</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xl"><i class="fa-solid fa-user-check"></i></div>
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">교육 이수 인원</p>
+                        <p class="text-2xl font-bold text-gray-900" id="stat-trainees">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cross Tabulation Stats Table -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-700">참여 인원 교차 통계 (연령/성별)</h3>
+                </div>
+                <div class="overflow-x-auto p-4">
+                    <table class="min-w-full divide-y divide-gray-200 border text-center text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 border font-medium text-gray-700">구분</th>
+                                <th class="px-4 py-2 border font-medium text-gray-700">9~13세</th>
+                                <th class="px-4 py-2 border font-medium text-gray-700">14~16세</th>
+                                <th class="px-4 py-2 border font-medium text-gray-700">17~19세</th>
+                                <th class="px-4 py-2 border font-medium text-gray-700">20~24세</th>
+                                <th class="px-4 py-2 border font-medium text-gray-900 bg-gray-200">합계</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-4 py-2 border font-medium bg-gray-50">남</td>
+                                <td class="px-4 py-2 border" id="stat-9~13세-m">0</td>
+                                <td class="px-4 py-2 border" id="stat-14~16세-m">0</td>
+                                <td class="px-4 py-2 border" id="stat-17~19세-m">0</td>
+                                <td class="px-4 py-2 border" id="stat-20~24세-m">0</td>
+                                <td class="px-4 py-2 border font-bold bg-gray-50" id="stat-tot-m">0</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border font-medium bg-gray-50">여</td>
+                                <td class="px-4 py-2 border" id="stat-9~13세-f">0</td>
+                                <td class="px-4 py-2 border" id="stat-14~16세-f">0</td>
+                                <td class="px-4 py-2 border" id="stat-17~19세-f">0</td>
+                                <td class="px-4 py-2 border" id="stat-20~24세-f">0</td>
+                                <td class="px-4 py-2 border font-bold bg-gray-50" id="stat-tot-f">0</td>
+                            </tr>
+                            <tr class="bg-gray-100 font-bold">
+                                <td class="px-4 py-2 border">합계</td>
+                                <td class="px-4 py-2 border" id="stat-9~13세-tot">0</td>
+                                <td class="px-4 py-2 border" id="stat-14~16세-tot">0</td>
+                                <td class="px-4 py-2 border" id="stat-17~19세-tot">0</td>
+                                <td class="px-4 py-2 border" id="stat-20~24세-tot">0</td>
+                                <td class="px-4 py-2 border bg-gray-200 text-blue-600" id="stat-grand-tot">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-[500px]">
+                <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center flex-wrap gap-2">
+                    <h3 class="font-bold text-gray-700">제출 현황 크로스체크</h3>
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <select id="filter-category" onchange="onFilterChange()" class="text-sm rounded-md border border-gray-300 py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="all">전체 분야</option>
+                            <option value="공연">공연</option>
+                            <option value="부스">부스</option>
+                            <option value="현장체험">현장체험</option>
+                            <option value="모니터링단">모니터링단</option>
+                            <option value="일일아티스탭">일일아티스탭</option>
+                        </select>
+                        <select id="filter-status" onchange="onFilterChange()" class="text-sm rounded-md border border-gray-300 py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="all">전체 상태</option>
+                            <option value="submitted">제출</option>
+                            <option value="pending">미제출</option>
+                        </select>
+                        <button onclick="downloadPDF()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center shadow-sm">
+                            <i class="fa-solid fa-file-pdf mr-1"></i> PDF 다운로드
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-grow overflow-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">분야</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">동아리명</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제출여부</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제출일시</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">상세보기</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">데이터를 로드중입니다...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700" id="pagination-info">
+                                Showing <span class="font-medium">0</span> to <span class="font-medium">0</span> of <span class="font-medium">0</span> results
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination" id="pagination-buttons">
+                                <!-- Buttons injected via JS -->
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-detail" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-3xl w-full flex flex-col max-h-[90vh]">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                    <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">안전교육 확인서 상세</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" onclick="closeModal()">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <div class="px-6 py-5 overflow-y-auto" id="modal-content">
+                    <!-- Content injected via JS -->
+                </div>
+                <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end sticky bottom-0">
+                    <button type="button" class="bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none" onclick="closeModal()">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="custom-alert" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeAlert()"></div>
+        <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <div id="alert-icon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2" id="alert-title">알림</h3>
+            <p class="text-sm text-gray-500 mb-6" id="alert-message">메시지</p>
+            <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:text-sm" onclick="closeAlert()">확인</button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-alert" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeConfirm()"></div>
+        <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">모든 데이터 초기화</h3>
+            <p class="text-sm text-gray-500 mb-6">테스트 데이터를 포함한 모든 제출 내역과 동아리 명단이 영구적으로 삭제됩니다. 계속하시겠습니까?</p>
+            <div class="flex gap-3">
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm" onclick="closeConfirm()">취소</button>
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:text-sm" onclick="executeResetData()">초기화</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 z-[300] hidden items-center justify-center bg-white/70 backdrop-blur-sm">
+        <div class="flex flex-col items-center">
+            <span class="loader mb-3"></span>
+            <span class="text-sm font-medium text-gray-700" id="loading-text">처리 중입니다...</span>
+        </div>
+    </div>
+
+
+    <script>
+        const commonSafetyItems = [
+            "축제장 내 이동 시 안전 및 질서 유지 수칙 숙지",
+            "식음료 취식 시 위생 수칙 및 식중독 예방 숙지",
+            "행사 사진/영상 촬영에 따른 초상권 활용 사전 안내",
+            "화재 발생 시 소화기구 위치 및 사용법 숙지",
+            "지진 등 재난 발생 시 비상 대피로 및 행동요령 숙지"
+        ];
+
+        const specificSafetyItems = {
+            "공연": [
+                "무대 오르내릴 시 미끄러짐 및 낙상 주의",
+                "무대 장치 및 조명, 음향 기기 임의 조작 엄금",
+                "대기실 내 화기 사용 엄금 및 청결 유지",
+                "공연 중 돌발 상황 발생 시 스태프 지시 이행",
+                "과도한 퍼포먼스로 인한 안전사고 방지 교육"
+            ],
+            "부스": [
+                "부스 내 전열기구 사용 안전 수칙 준수",
+                "칼, 가위 등 날카로운 도구 사용 시 주의",
+                "체험객 밀집 시 동선 통제 및 안전거리 확보",
+                "부스 구조물 임의 변경 및 훼손 엄금",
+                "운영 종료 후 주변 정리정돈 및 쓰레기 분리수거"
+            ],
+            "현장체험": [
+                "야외 활동 시 온열질환 및 일사병 예방 조치",
+                "인솔자 지시 이행 및 지정 구역 이탈 엄금",
+                "위험 시설물 및 출입 금지 구역 파악",
+                "비상 연락망 유지 및 응급 상황 발생 시 보고체계 숙지",
+                "체험 도구 사용 시 안전 주의사항 숙지"
+            ],
+            "모니터링단": [
+                "행사장 순찰 시 본인 안전 우선 확보",
+                "관람객과의 마찰 주의 및 친절한 응대",
+                "무전기 등 통신 장비 올바른 사용법 숙지",
+                "위험 요소 발견 시 즉각 안전요원에게 보고",
+                "객관적이고 안전한 위치에서 모니터링 수행"
+            ],
+            "일일아티스탭": [
+                "스태프 비표 항시 패용 및 무단 근무지 이탈 엄금",
+                "관람객 동선 안내 시 친절하고 명확한 지시",
+                "무거운 물품 운반 시 요통 등 부상 주의",
+                "긴급 상황 발생 시 초동 대처 및 신속 보고",
+                "지정된 휴식 시간 및 교대 근무 수칙 준수"
+            ]
+        };
+
+        function showAlert(title, message, type = 'info') {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            
+            const iconObj = document.getElementById('alert-icon');
+            iconObj.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4 ' + 
+                (type === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600');
+            
+            iconObj.innerHTML = type === 'error' ? 
+                '<i class="fa-solid fa-triangle-exclamation text-xl"></i>' : 
+                '<i class="fa-solid fa-circle-info text-xl"></i>';
+
+            document.getElementById('custom-alert').classList.remove('hidden');
+            document.getElementById('custom-alert').classList.add('flex');
+        }
+
+        function closeAlert() {
+            document.getElementById('custom-alert').classList.add('hidden');
+            document.getElementById('custom-alert').classList.remove('flex');
+        }
+
+        function showResetConfirm() {
+            document.getElementById('confirm-alert').classList.remove('hidden');
+            document.getElementById('confirm-alert').classList.add('flex');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirm-alert').classList.add('hidden');
+            document.getElementById('confirm-alert').classList.remove('flex');
+        }
+
+        async function executeResetData() {
+            closeConfirm();
+            showLoading('데이터를 초기화하는 중입니다...');
+            try {
+                const clubsSnap = await window.dbRef.getDocs(window.dbRef.collection(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-clubs'));
+                const submissionsSnap = await window.dbRef.getDocs(window.dbRef.collection(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions'));
+                
+                const batch = window.dbRef.writeBatch(window.dbInstance);
+                let hasData = false;
+                
+                clubsSnap.forEach(doc => {
+                    batch.delete(doc.ref);
+                    hasData = true;
+                });
+                submissionsSnap.forEach(doc => {
+                    batch.delete(doc.ref);
+                    hasData = true;
+                });
+                
+                if (hasData) {
+                    await batch.commit();
+                }
+                
+                window.appState.clubs = [];
+                window.appState.submissions = {};
+                renderAdminTable();
+                updateStatsTable();
+                
+                hideLoading();
+                showAlert('초기화 완료', '모든 데이터가 성공적으로 초기화되었습니다.');
+            } catch (err) {
+                console.error(err);
+                hideLoading();
+                showAlert('오류', '데이터 초기화 중 문제가 발생했습니다.', 'error');
+            }
+        }
+
+        function showLoading(text = '처리 중입니다...') {
+            document.getElementById('loading-text').innerText = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            document.getElementById('loading-overlay').classList.add('flex');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('loading-overlay').classList.remove('flex');
+        }
+
+        function switchTab(tab) {
+            const userView = document.getElementById('view-user');
+            const adminView = document.getElementById('view-admin');
+            const btnUser = document.getElementById('tab-user');
+            const btnAdmin = document.getElementById('tab-admin');
+
+            if (tab === 'user') {
+                userView.classList.remove('hidden'); userView.classList.add('block');
+                adminView.classList.remove('block'); adminView.classList.add('hidden');
+                btnUser.className = 'tab-active px-1 py-5 text-sm md:text-base transition-colors';
+                btnAdmin.className = 'tab-inactive px-1 py-5 text-sm md:text-base transition-colors';
+            } else {
+                userView.classList.remove('block'); userView.classList.add('hidden');
+                adminView.classList.remove('hidden'); adminView.classList.add('block');
+                btnAdmin.className = 'tab-active px-1 py-5 text-sm md:text-base transition-colors';
+                btnUser.className = 'tab-inactive px-1 py-5 text-sm md:text-base transition-colors';
+                if(window.appState && window.appState.clubs) {
+                    renderAdminTable();
+                    loadAllSubmissionsAndStats();
+                }
+            }
+        }
+
+        function nextStep() {
+            const photoVal = document.getElementById('photo-base64').value;
+            if (!photoVal) {
+                showAlert('입력 오류', '안전교육 증빙 사진을 첨부해주세요.', 'error');
+                return;
+            }
+            
+            const clubId = document.getElementById('input-club').value;
+            if(!clubId) {
+                showAlert('입력 오류', '동아리를 검색하여 선택해주세요.', 'error');
+                return;
+            }
+
+            document.getElementById('form-page-1').classList.add('hidden');
+            document.getElementById('form-page-2').classList.remove('hidden');
+            document.getElementById('page-indicator').innerText = '2 / 2 페이지';
+            
+            setTimeout(() => {
+                Object.values(window.appState.signaturePads).forEach(pad => {
+                    const rect = pad.canvas.parentElement.getBoundingClientRect();
+                    pad.canvas.width = rect.width;
+                    pad.canvas.height = 100;
+                    
+                    // 리사이즈로 인한 컨텍스트 초기화 방지
+                    pad.ctx.lineWidth = 2.5;
+                    pad.ctx.lineCap = 'round';
+                    pad.ctx.strokeStyle = '#000000';
+                });
+            }, 100);
+        }
+
+        function prevStep() {
+            document.getElementById('form-page-2').classList.add('hidden');
+            document.getElementById('form-page-1').classList.remove('hidden');
+            document.getElementById('form-page-1').classList.add('block');
+            document.getElementById('page-indicator').innerText = '1 / 2 페이지';
+        }
+
+        function resetForm() {
+            document.getElementById('submission-form').reset();
+            // 유지해야 할 기본값 재설정
+            document.getElementById('input-event-name').value = "2026년 제11회 시흥시청소년동아리축제 SIYF";
+            document.getElementById('input-schedule').value = "2026. 10. 17.(토)";
+            
+            document.getElementById('photo-preview').classList.add('hidden');
+            document.getElementById('photo-preview').src = '';
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('photo-base64').value = '';
+            
+            document.getElementById('success-screen').classList.add('hidden');
+            document.getElementById('submission-form').classList.remove('hidden');
+            
+            prevStep();
+            document.getElementById('signature-container').innerHTML = '';
+            window.appState.signaturePads = {};
+            window.signatureRowCount = 0;
+            initSignatureRows();
+        }
+
+        // --- Custom Searchable Dropdown Logic ---
+        function updateClubDropdowns() {
+            const catSelect = document.getElementById('input-category');
+            const searchInput = document.getElementById('input-club-search');
+            const hiddenIdInput = document.getElementById('input-club');
+            
+            if(!catSelect || !searchInput) return;
+            
+            const selectedCat = catSelect.value;
+            searchInput.value = '';
+            hiddenIdInput.value = '';
+            
+            renderChecklist(selectedCat);
+
+            if(!selectedCat) {
+                searchInput.disabled = true;
+                searchInput.placeholder = '분야를 먼저 선택해주세요';
+                return;
+            }
+            
+            searchInput.disabled = false;
+            searchInput.placeholder = '동아리명을 검색하세요';
+            renderClubSearchList();
+        }
+
+        function showClubList() {
+            document.getElementById('club-dropdown-list').classList.remove('hidden');
+            renderClubSearchList();
+        }
+
+        function hideClubList() {
+            document.getElementById('club-dropdown-list').classList.add('hidden');
+        }
+
+        function filterClubList() {
+            renderClubSearchList();
+        }
+
+        function selectClub(id, name) {
+            document.getElementById('input-club').value = id;
+            document.getElementById('input-club-search').value = name;
+            hideClubList();
+        }
+
+        function renderClubSearchList() {
+            const catSelect = document.getElementById('input-category');
+            const searchInput = document.getElementById('input-club-search');
+            const listEl = document.getElementById('club-dropdown-list');
+            
+            if(!catSelect || !listEl) return;
+            
+            const selectedCat = catSelect.value;
+            const query = searchInput.value.toLowerCase().trim();
+            
+            let filtered = window.appState.clubs.filter(c => c.category === selectedCat);
+            
+            if(query) {
+                filtered = filtered.filter(c => c.clubName.toLowerCase().includes(query));
+            }
+
+            listEl.innerHTML = '';
+            
+            if(filtered.length === 0) {
+                listEl.innerHTML = '<li class="px-4 py-3 text-sm text-gray-500">검색 결과가 없습니다</li>';
+                return;
+            }
+
+            filtered.forEach(club => {
+                const li = document.createElement('li');
+                const isSubmitted = club.status === 'submitted';
+                li.className = `px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-0 ${isSubmitted ? 'text-gray-400' : 'text-gray-900'}`;
+                li.innerHTML = club.clubName + (isSubmitted ? ' <span class="text-xs text-red-400 ml-1">(제출완료)</span>' : '');
+                li.onmousedown = () => selectClub(club.id, club.clubName); // onmousedown fires before onblur
+                listEl.appendChild(li);
+            });
+        }
+
+        function renderChecklist(category) {
+            const container = document.getElementById('checklist-container');
+            if (!category) {
+                container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">상단의 \'분야\'를 선택하면 교육 체크리스트 항목이 나타납니다.</p>';
+                return;
+            }
+
+            let html = '<div class="mb-4"><strong class="text-sm text-blue-700 block mb-2"><i class="fa-solid fa-check-double mr-1"></i> [공통 교육 항목]</strong>';
+            commonSafetyItems.forEach((item, idx) => {
+                html += `
+                    <label class="flex items-start gap-2 mb-2 cursor-pointer group hover:bg-blue-50 p-1.5 rounded transition-colors">
+                        <input type="checkbox" name="edu-check" value="${item}" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-sm text-gray-700 group-hover:text-black leading-tight">${item}</span>
+                    </label>
+                `;
+            });
+            html += '</div>';
+
+            if (specificSafetyItems[category]) {
+                html += '<div><strong class="text-sm text-blue-700 block mb-2"><i class="fa-solid fa-clipboard-check mr-1"></i> [분야별 교육 항목: ' + category + ']</strong>';
+                specificSafetyItems[category].forEach((item, idx) => {
+                    html += `
+                        <label class="flex items-start gap-2 mb-2 cursor-pointer group hover:bg-blue-50 p-1.5 rounded transition-colors">
+                            <input type="checkbox" name="edu-check" value="${item}" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                            <span class="text-sm text-gray-700 group-hover:text-black leading-tight">${item}</span>
+                        </label>
+                    `;
+                });
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+    </script>
+
+    <script>
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.match('image.*')) {
+                showAlert('파일 오류', '이미지 파일만 업로드 가능합니다.', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            showLoading('이미지 최적화 중...');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 1200;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height && width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    } else if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    let quality = 0.8;
+                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    
+                    while (dataUrl.length > 1300000 && quality > 0.1) {
+                        quality -= 0.1;
+                        dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    }
+
+                    const preview = document.getElementById('photo-preview');
+                    preview.src = dataUrl;
+                    preview.classList.remove('hidden');
+                    document.getElementById('photo-placeholder').classList.add('hidden');
+                    document.getElementById('photo-base64').value = dataUrl;
+                    
+                    hideLoading();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function initSignatureRows(count = 5) {
+            for(let i=0; i<count; i++) {
+                addSignatureRow();
+            }
+        }
+
+        function addSignatureRow() {
+            const container = document.getElementById('signature-container');
+            const rowIdx = window.signatureRowCount++;
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'flex flex-col gap-3 bg-white p-4 rounded-lg border border-gray-200 shadow-sm';
+            
+            const inputHtml = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-1">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">참여자 이름</label>
+                        <input type="text" id="sig-name-${rowIdx}" class="w-full rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none" placeholder="이름 입력">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">연령</label>
+                        <select id="sig-age-${rowIdx}" class="w-full rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                            <option value="">선택</option>
+                            <option value="9~13세">9~13세</option>
+                            <option value="14~16세">14~16세</option>
+                            <option value="17~19세">17~19세</option>
+                            <option value="20~24세">20~24세</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">성별</label>
+                        <div class="flex gap-4 pt-2">
+                            <label class="inline-flex items-center"><input type="radio" name="sig-gender-${rowIdx}" value="남" class="h-4 w-4 text-blue-600"> <span class="ml-2 text-sm">남</span></label>
+                            <label class="inline-flex items-center"><input type="radio" name="sig-gender-${rowIdx}" value="여" class="h-4 w-4 text-blue-600"> <span class="ml-2 text-sm">여</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative w-full h-[100px] border border-gray-300 rounded-md bg-white">
+                    <label class="absolute top-2 right-2 z-10 text-xs">
+                        <button type="button" onclick="clearSignature(${rowIdx})" class="text-gray-500 hover:text-red-500 transition-colors bg-gray-100 hover:bg-red-50 px-2 py-1 rounded shadow-sm border border-gray-200">지우기</button>
+                    </label>
+                    <canvas id="sig-canvas-${rowIdx}" class="signature-canvas absolute inset-0 w-full h-full rounded-md"></canvas>
+                </div>
+            `;
+            rowDiv.innerHTML = inputHtml;
+            container.appendChild(rowDiv);
+
+            setTimeout(() => {
+                const canvas = document.getElementById(`sig-canvas-${rowIdx}`);
+                setupCanvas(canvas, rowIdx);
+            }, 0);
+        }
+
+        function setupCanvas(canvas, idx) {
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+
+            let isDrawing = false;
+            
+            window.appState.signaturePads[idx] = { canvas, ctx, hasDrawn: false };
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            };
+
+            const startDrawing = (e) => {
+                e.preventDefault();
+                isDrawing = true;
+                window.appState.signaturePads[idx].hasDrawn = true;
+                const pos = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            };
+
+            const draw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            };
+
+            const stopDrawing = (e) => {
+                if(e) e.preventDefault();
+                isDrawing = false;
+                ctx.closePath();
+            };
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing, { passive: false });
+        }
+
+        function clearSignature(idx) {
+            const pad = window.appState.signaturePads[idx];
+            if(!pad) return;
+            pad.ctx.clearRect(0, 0, pad.canvas.width, pad.canvas.height);
+            pad.hasDrawn = false;
+        }
+    </script>
+
+    <script>
+        async function submitForm() {
+            if(!window.authInstance || !window.authInstance.currentUser) {
+                showAlert('오류', '데이터베이스에 연결되지 않았습니다.', 'error');
+                return;
+            }
+
+            const clubId = document.getElementById('input-club').value;
+            if(!clubId) {
+                showAlert('입력 오류', '동아리를 정확히 선택해주세요.', 'error');
+                return;
+            }
+            
+            const clubDataObj = window.appState.clubs.find(c => c.id === clubId);
+            const clubName = clubDataObj ? clubDataObj.clubName : "알수없음";
+            const category = document.getElementById('input-category').value;
+
+            // Checklist validation
+            const checkboxes = document.querySelectorAll('input[name="edu-check"]');
+            let allChecked = true;
+            const checkedItems = [];
+            checkboxes.forEach(cb => {
+                if (!cb.checked) allChecked = false;
+                else checkedItems.push(cb.value);
+            });
+
+            if (checkboxes.length > 0 && !allChecked) {
+                showAlert('입력 오류', '안전교육 내용 확인(체크리스트) 항목을 모두 체크해주세요.', 'error');
+                return;
+            }
+
+            const signatures = [];
+            let validSigs = 0;
+            let partialErrors = false;
+            
+            Object.keys(window.appState.signaturePads).forEach(idx => {
+                const pad = window.appState.signaturePads[idx];
+                const nameInput = document.getElementById(`sig-name-${idx}`).value.trim();
+                const ageInput = document.getElementById(`sig-age-${idx}`).value;
+                const genderNode = document.querySelector(`input[name="sig-gender-${idx}"]:checked`);
+                const genderInput = genderNode ? genderNode.value : '';
+
+                const hasAnyInput = nameInput || ageInput || genderInput || pad.hasDrawn;
+                const hasAllInput = nameInput && ageInput && genderInput && pad.hasDrawn;
+
+                if (hasAllInput) {
+                    signatures.push({
+                        name: nameInput,
+                        age: ageInput,
+                        gender: genderInput,
+                        image: pad.canvas.toDataURL('image/png')
+                    });
+                    validSigs++;
+                } else if (hasAnyInput && !hasAllInput) {
+                    partialErrors = true;
+                }
+            });
+
+            if (partialErrors) {
+                showAlert('입력 오류', '이름, 연령, 성별, 서명 중 누락된 항목이 있는 행이 있습니다. 모두 입력하거나 내용 지우기 버튼을 눌러 비워주세요.', 'error');
+                return;
+            }
+
+            if(validSigs === 0) {
+                showAlert('입력 오류', '최소 1명 이상의 참석자 정보(이름, 연령, 성별, 서명)를 모두 입력해야 합니다.', 'error');
+                return;
+            }
+
+            const payload = {
+                clubId: clubId,
+                clubName: clubName,
+                category: category,
+                affiliation: document.getElementById('input-affiliation').value.trim(),
+                eventName: document.getElementById('input-event-name').value.trim(),
+                venue: document.getElementById('input-venue').value.trim(),
+                eduLocation: document.getElementById('input-edu-location').value.trim(),
+                date: document.getElementById('input-date').value,
+                time: document.getElementById('input-time').value.trim(),
+                schedule: document.getElementById('input-schedule').value.trim(),
+                eduChecklist: checkedItems,
+                photoBase64: document.getElementById('photo-base64').value,
+                signatures: signatures,
+                submittedAt: new Date().toISOString()
+            };
+
+            showLoading('데이터를 저장하는 중입니다...');
+            
+            try {
+                const submissionsRef = window.dbRef.collection(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions');
+                const newDocRef = window.dbRef.doc(submissionsRef);
+                
+                await window.dbRef.setDoc(newDocRef, payload);
+                
+                const clubDocRef = window.dbRef.doc(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-clubs', clubId);
+                await window.dbRef.updateDoc(clubDocRef, {
+                    status: 'submitted',
+                    submissionId: newDocRef.id,
+                    submittedAt: payload.submittedAt
+                });
+
+                hideLoading();
+                
+                document.getElementById('submission-form').classList.add('hidden');
+                document.getElementById('form-page-2').classList.add('hidden');
+                document.getElementById('success-screen').classList.remove('hidden');
+
+            } catch (err) {
+                console.error("Submit Error:", err);
+                hideLoading();
+                showAlert('전송 실패', '데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+            }
+        }
+    </script>
+
+    <script>
+        function downloadTemplate() {
+            const ws_data = [
+                ["분야", "동아리명"],
+                ["공연", "댄스부A"],
+                ["부스", "과학실험부"],
+                ["현장체험", "사진동아리"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "동아리명단");
+            XLSX.writeFile(wb, "안전교육_동아리명단_양식.xlsx");
+        }
+
+        async function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoading('엑셀 파일 분석 및 저장 중...');
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                    if(json.length < 2 || json[0][0] !== "분야" || json[0][1] !== "동아리명") {
+                        hideLoading();
+                        showAlert('양식 오류', '엑셀 파일의 1열은 "분야", 2열은 "동아리명" 이어야 합니다.', 'error');
+                        return;
+                    }
+
+                    const batch = window.dbRef.writeBatch(window.dbInstance);
+                    let validCount = 0;
+
+                    for(let i=1; i<json.length; i++) {
+                        const row = json[i];
+                        if(row.length >= 2 && row[0] && row[1]) {
+                            const category = String(row[0]).trim();
+                            const clubName = String(row[1]).trim();
+                            
+                            const validCats = ["공연", "부스", "현장체험", "모니터링단", "일일아티스탭"];
+                            if(validCats.includes(category)) {
+                                const docRef = window.dbRef.doc(window.dbRef.collection(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-clubs'));
+                                batch.set(docRef, {
+                                    category: category,
+                                    clubName: clubName,
+                                    status: 'pending',
+                                    createdAt: new Date().toISOString()
+                                });
+                                validCount++;
+                            }
+                        }
+                    }
+
+                    if(validCount > 0) {
+                        await batch.commit();
+                        showAlert('업로드 성공', `총 ${validCount}개의 동아리 데이터가 추가되었습니다.`);
+                    } else {
+                        showAlert('알림', '유효한 데이터가 없습니다.');
+                    }
+                    
+                } catch(err) {
+                    console.error(err);
+                    showAlert('오류', '엑셀 파일을 처리하는 중 문제가 발생했습니다.', 'error');
+                } finally {
+                    hideLoading();
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function loadAllSubmissionsAndStats() {
+            showLoading('통계 데이터 갱신 중...');
+            try {
+                const snap = await window.dbRef.getDocs(window.dbRef.collection(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions'));
+                snap.forEach(doc => {
+                    window.appState.submissions[doc.id] = doc.data();
+                });
+                updateStatsTable();
+                hideLoading();
+            } catch(err) {
+                console.error(err);
+                hideLoading();
+            }
+        }
+
+        function updateStatsTable() {
+            let stats = {
+                '9~13세': { '남': 0, '여': 0 },
+                '14~16세': { '남': 0, '여': 0 },
+                '17~19세': { '남': 0, '여': 0 },
+                '20~24세': { '남': 0, '여': 0 }
+            };
+            let totalTrainees = 0;
+            let totM = 0;
+            let totF = 0;
+
+            window.appState.clubs.forEach(club => {
+                if(club.status === 'submitted' && window.appState.submissions[club.submissionId]) {
+                    const data = window.appState.submissions[club.submissionId];
+                    if(data.signatures) {
+                        data.signatures.forEach(sig => {
+                            if(stats[sig.age] && stats[sig.age][sig.gender] !== undefined) {
+                                stats[sig.age][sig.gender]++;
+                                totalTrainees++;
+                                if(sig.gender === '남') totM++;
+                                if(sig.gender === '여') totF++;
+                            }
+                        });
+                    }
+                }
+            });
+
+            document.getElementById('stat-trainees').innerText = totalTrainees;
+            
+            let ages = ['9~13세', '14~16세', '17~19세', '20~24세'];
+            ages.forEach(age => {
+                const m = stats[age]['남'];
+                const f = stats[age]['여'];
+                document.getElementById(`stat-${age}-m`).innerText = m;
+                document.getElementById(`stat-${age}-f`).innerText = f;
+                document.getElementById(`stat-${age}-tot`).innerText = m + f;
+            });
+            
+            document.getElementById('stat-tot-m').innerText = totM;
+            document.getElementById('stat-tot-f').innerText = totF;
+            document.getElementById('stat-grand-tot').innerText = totalTrainees;
+        }
+
+        function renderAdminTable() {
+            if(!window.appState.clubs) return;
+
+            const filterCat = document.getElementById('filter-category').value;
+            const filterStat = document.getElementById('filter-status').value;
+
+            let filtered = window.appState.clubs;
+
+            if(filterCat !== 'all') filtered = filtered.filter(c => c.category === filterCat);
+            if(filterStat !== 'all') filtered = filtered.filter(c => c.status === filterStat);
+
+            const total = window.appState.clubs.length;
+            const submitted = window.appState.clubs.filter(c => c.status === 'submitted').length;
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-submitted').innerText = submitted;
+            document.getElementById('stat-pending').innerText = total - submitted;
+
+            // Pagination Logic
+            const totalFiltered = filtered.length;
+            const totalPages = Math.ceil(totalFiltered / window.itemsPerPage) || 1;
+            
+            if (window.adminCurrentPage > totalPages) {
+                window.adminCurrentPage = totalPages;
+            }
+            if (window.adminCurrentPage < 1) window.adminCurrentPage = 1;
+
+            const startIdx = (window.adminCurrentPage - 1) * window.itemsPerPage;
+            const endIdx = startIdx + window.itemsPerPage;
+            const paginatedItems = filtered.slice(startIdx, endIdx);
+
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+
+            if(paginatedItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">데이터가 없습니다.</td></tr>';
+                updatePaginationUI(0, 0, 0, 1);
+                return;
+            }
+
+            paginatedItems.forEach(club => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                
+                const isSubmitted = club.status === 'submitted';
+                const statusBadge = isSubmitted 
+                    ? '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">제출완료</span>'
+                    : '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">미제출</span>';
+                
+                const dateStr = isSubmitted && club.submittedAt ? new Date(club.submittedAt).toLocaleString('ko-KR') : '-';
+
+                const btnHtml = isSubmitted 
+                    ? `<button onclick="viewDetails('${club.submissionId}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded text-sm font-medium transition-colors">보기</button>`
+                    : '<span class="text-gray-400 text-sm">-</span>';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${club.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${club.clubName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dateStr}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${btnHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updatePaginationUI(startIdx + 1, Math.min(endIdx, totalFiltered), totalFiltered, totalPages);
+        }
+
+        function updatePaginationUI(start, end, total, totalPages) {
+            document.getElementById('pagination-info').innerHTML = `전체 <span class="font-bold">${total}</span>개 중 <span class="font-bold">${start}</span> ~ <span class="font-bold">${end}</span> 표시`;
+            
+            const btnContainer = document.getElementById('pagination-buttons');
+            let btnsHtml = '';
+            
+            // Prev Button
+            btnsHtml += `
+                <button onclick="changePage(${window.adminCurrentPage - 1})" ${window.adminCurrentPage <= 1 ? 'disabled' : ''} class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            `;
+
+            // Page numbers
+            let startPage = Math.max(1, window.adminCurrentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            for(let i = startPage; i <= endPage; i++) {
+                if (i === window.adminCurrentPage) {
+                    btnsHtml += `<button aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">${i}</button>`;
+                } else {
+                    btnsHtml += `<button onclick="changePage(${i})" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">${i}</button>`;
+                }
+            }
+
+            // Next Button
+            btnsHtml += `
+                <button onclick="changePage(${window.adminCurrentPage + 1})" ${window.adminCurrentPage >= totalPages ? 'disabled' : ''} class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            `;
+
+            btnContainer.innerHTML = btnsHtml;
+        }
+
+        function changePage(page) {
+            window.adminCurrentPage = page;
+            renderAdminTable();
+        }
+
+        function onFilterChange() {
+            window.adminCurrentPage = 1;
+            renderAdminTable();
+        }
+
+        async function viewDetails(submissionId) {
+            if(!submissionId) return;
+            
+            showLoading('상세 정보를 불러오는 중...');
+            try {
+                let data = window.appState.submissions[submissionId];
+                
+                if(!data) {
+                    const docRef = window.dbRef.doc(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions', submissionId);
+                    const snap = await window.dbRef.getDoc(docRef);
+                    if(snap.exists()) {
+                        data = snap.data();
+                        window.appState.submissions[submissionId] = data;
+                    } else {
+                        throw new Error("문서를 찾을 수 없습니다.");
+                    }
+                }
+
+                const contentDiv = document.getElementById('modal-content');
+                
+                let sigsHtml = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">';
+                if(data.signatures && data.signatures.length > 0) {
+                    data.signatures.forEach(sig => {
+                        sigsHtml += `
+                            <div class="border border-gray-200 rounded p-3 text-center bg-white shadow-sm">
+                                <p class="text-sm font-bold border-b pb-1 mb-2">${sig.name} <span class="text-xs text-gray-500 font-normal">(${sig.gender}, ${sig.age})</span></p>
+                                <img src="${sig.image}" class="h-16 mx-auto object-contain" alt="서명">
+                            </div>
+                        `;
+                    });
+                }
+                sigsHtml += '</div>';
+
+                contentDiv.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-lg">
+                            <div class="col-span-2 sm:col-span-1"><span class="text-gray-500 block mb-1">동아리명 (분야)</span><span class="font-bold text-lg">${data.clubName} <span class="text-blue-600 font-normal text-base">(${data.category})</span></span></div>
+                            <div class="col-span-2 sm:col-span-1"><span class="text-gray-500 block mb-1">소속</span><span class="font-medium">${data.affiliation}</span></div>
+                            <div class="col-span-2 sm:col-span-1"><span class="text-gray-500 block mb-1">행사명</span><span>${data.eventName}</span></div>
+                            <div class="col-span-2 sm:col-span-1"><span class="text-gray-500 block mb-1">축제 일정</span><span>${data.schedule}</span></div>
+                            <div class="col-span-2 sm:col-span-1"><span class="text-gray-500 block mb-1">행사장</span><span>${data.venue}</span></div>
+                            <div class="col-span-2 sm:col-span-1"><span class="text-gray-500 block mb-1">교육장소</span><span>${data.eduLocation || '-'}</span></div>
+                            <div class="col-span-2"><span class="text-gray-500 block mb-1">교육일자 및 시간</span><span>${data.date} / ${data.time}</span></div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-gray-900 border-b pb-2 mb-3">안전교육 내용 확인 결과</h4>
+                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                ${data.eduChecklist ? 
+                                    '<ul class="list-disc list-inside text-sm text-gray-700 space-y-1">' + data.eduChecklist.map(item => `<li>${item}</li>`).join('') + '</ul>' : 
+                                    '<p class="text-sm text-gray-700 whitespace-pre-wrap">' + (data.eduContent || '-') + '</p>'
+                                }
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-gray-900 border-b pb-2 mb-3">안전교육 증빙 사진</h4>
+                            <div class="bg-gray-100 rounded-lg p-2 flex justify-center">
+                                <img src="${data.photoBase64}" class="max-h-64 object-contain rounded shadow-sm" alt="교육사진">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-gray-900 border-b pb-2 mb-3">참석자 정보 및 서명 (${data.signatures.length}명)</h4>
+                            ${sigsHtml}
+                        </div>
+                    </div>
+                `;
+
+                hideLoading();
+                document.getElementById('modal-detail').classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                hideLoading();
+                showAlert('오류', '상세 데이터를 불러오는 데 실패했습니다.', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal-detail').classList.add('hidden');
+        }
+
+        function generatePDFPageHtml(data) {
+            let sigsHtml = '<div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:5px; justify-content: flex-start;">';
+            if(data.signatures) {
+                data.signatures.forEach(sig => {
+                    sigsHtml += `
+                        <div style="border:1px solid #aaa; border-radius:3px; padding:5px; width:calc(20% - 8px); text-align:center; box-sizing:border-box; background-color:#fff;">
+                            <p style="font-weight:bold; margin-bottom:3px; border-bottom:1px solid #eee; padding-bottom:3px; font-size:10px; margin-top:0;">${sig.name}<br><span style="font-weight:normal; font-size:9px; color:#555;">(${sig.gender}, ${sig.age})</span></p>
+                            <img src="${sig.image}" style="height:35px; object-fit:contain; width:100%;">
+                        </div>
+                    `;
+                });
+            }
+            sigsHtml += '</div>';
+
+            let checklistHtml = '';
+            if (data.eduChecklist) {
+                checklistHtml = '<ul style="margin:0; padding-left:15px; font-size:11px; line-height:1.4; font-family: \'Malgun Gothic\', sans-serif;">';
+                data.eduChecklist.forEach(item => {
+                    checklistHtml += `<li style="margin-bottom: 2px;">${item}</li>`;
+                });
+                checklistHtml += '</ul>';
+            } else {
+                checklistHtml = `<div style="font-size:11px; white-space:pre-wrap;">${data.eduContent || '-'}</div>`;
+            }
+
+            return `
+                <div style="width: 210mm; height: 297mm; padding: 10mm 20mm 15mm 20mm; box-sizing: border-box; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; color: #000; background: #fff; position: relative;">
+                    
+                    <h1 style="text-align:center; font-size:26px; font-weight:bold; letter-spacing: 3px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-top:0; margin-bottom: 15px;">
+                        안전교육 확인서
+                    </h1>
+                    
+                    <table style="width:100%; border-collapse: collapse; margin-bottom: 12px; font-size:12px; border: 1px solid #000;">
+                        <tr>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; width:15%; font-weight:bold; text-align:center;">분야</td>
+                            <td style="padding:8px; border:1px solid #000; width:35%;">${data.category}</td>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; width:15%; font-weight:bold; text-align:center;">동아리명</td>
+                            <td style="padding:8px; border:1px solid #000; width:35%; font-weight:bold;">${data.clubName}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; font-weight:bold; text-align:center;">소속</td>
+                            <td style="padding:8px; border:1px solid #000;" colspan="3">${data.affiliation}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; font-weight:bold; text-align:center;">행사명</td>
+                            <td style="padding:8px; border:1px solid #000;" colspan="3">${data.eventName}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; font-weight:bold; text-align:center;">행사장</td>
+                            <td style="padding:8px; border:1px solid #000;">${data.venue}</td>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; font-weight:bold; text-align:center;">교육장소</td>
+                            <td style="padding:8px; border:1px solid #000;">${data.eduLocation || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; font-weight:bold; text-align:center;">교육일시</td>
+                            <td style="padding:8px; border:1px solid #000;">${data.date} / ${data.time}</td>
+                            <td style="padding:8px; border:1px solid #000; background:#f0f0f0; font-weight:bold; text-align:center;">축제일정</td>
+                            <td style="padding:8px; border:1px solid #000;">${data.schedule}</td>
+                        </tr>
+                    </table>
+
+                    <div style="margin-bottom:12px; border: 1px solid #000; display:flex; flex-direction:column;">
+                        <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
+                            안전교육 내용 확인 결과
+                        </div>
+                        <div style="padding:8px 10px;">
+                            ${checklistHtml}
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px; border: 1px solid #000; display:flex; flex-direction:column;">
+                        <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
+                            안전교육 증빙 사진
+                        </div>
+                        <div style="padding:5px; text-align:center; height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <img src="${data.photoBase64}" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                        </div>
+                    </div>
+
+                    <div style="border: 1px solid #000; display:flex; flex-direction:column; flex-grow: 1;">
+                        <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
+                            참석자 명단 및 서명 (총 ${data.signatures.length}명)
+                        </div>
+                        <div style="padding:10px; background:#f9f9f9; flex-grow:1;">
+                            <p style="margin:0 0 5px 0; font-size:10px; color:#555;">※ 위 동아리는 행사에 앞서 안전교육을 성실히 이수하였음을 확인합니다.</p>
+                            ${sigsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function downloadPDF() {
+            const filterCat = document.getElementById('filter-category').value;
+            if(filterCat === 'all') {
+                showAlert('알림', '특정 분야(예: 공연, 부스 등)를 먼저 선택한 후 PDF를 다운로드 해주세요.');
+                return;
+            }
+
+            const clubsToExport = window.appState.clubs.filter(c => c.category === filterCat && c.status === 'submitted');
+            if(clubsToExport.length === 0) {
+                showAlert('알림', '해당 분야에 제출완료된 확인서가 없습니다.');
+                return;
+            }
+
+            showLoading(`PDF 생성 중... (총 ${clubsToExport.length}건, 데이터가 많을 경우 시간이 소요됩니다)`);
+
+            try {
+                const container = document.createElement('div');
+                container.style.width = '210mm';
+                container.style.backgroundColor = 'white';
+                container.style.color = 'black';
+
+                for(let i=0; i<clubsToExport.length; i++) {
+                    const club = clubsToExport[i];
+                    let data = window.appState.submissions[club.submissionId];
+                    if(!data) {
+                        const docRef = window.dbRef.doc(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions', club.submissionId);
+                        const snap = await window.dbRef.getDoc(docRef);
+                        if(snap.exists()) {
+                            data = snap.data();
+                            window.appState.submissions[club.submissionId] = data;
+                        }
+                    }
+
+                    if(data) {
+                        const pageHtml = generatePDFPageHtml(data);
+                        const pageDiv = document.createElement('div');
+                        pageDiv.innerHTML = pageHtml;
+                        if (i < clubsToExport.length - 1) {
+                            pageDiv.style.pageBreakAfter = 'always';
+                        }
+                        container.appendChild(pageDiv);
+                    }
+                }
+
+                const opt = {
+                    margin: 0, 
+                    filename: `안전교육확인서_${filterCat}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                await html2pdf().set(opt).from(container).save();
+                hideLoading();
+
+            } catch (err) {
+                console.error(err);
+                hideLoading();
+                showAlert('오류', 'PDF 생성 중 문제가 발생했습니다. 관리자에게 문의하세요.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
