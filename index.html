@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>동아리축제 안전교육 확인서 관리</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 엑셀 라이브러리 추가 -->
+    <!-- 엑셀 및 PDF 라이브러리 추가 -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
@@ -50,20 +51,22 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="./assets/index-BOs2ke0A.js"></script>
+  <script type="module" crossorigin src="./assets/index-DexYZC2k.js"></script>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex-shrink-0 flex items-center">
+                <!-- 방패 아이콘 클릭 시 관리자 로그인 모달 호출 -->
+                <div class="flex-shrink-0 flex items-center cursor-pointer hover:opacity-80 transition-opacity" onclick="showAdminLoginModal()" title="관리자 로그인">
                     <i class="fa-solid fa-shield-halved text-blue-600 text-2xl mr-2"></i>
                     <span class="font-bold text-xl tracking-tight">안전교육 시스템</span>
                 </div>
                 <div class="flex space-x-4 md:space-x-8">
                     <button id="tab-user" class="tab-active px-1 py-5 text-sm md:text-base transition-colors" onclick="switchTab('user')">제출용 모드</button>
-                    <button id="tab-admin" class="tab-inactive px-1 py-5 text-sm md:text-base transition-colors" onclick="switchTab('admin')">관리자 모드</button>
+                    <!-- 기본적으로 관리자 모드 탭 숨김 (인증 성공 시 표시) -->
+                    <button id="tab-admin" class="tab-inactive hidden px-1 py-5 text-sm md:text-base transition-colors" onclick="switchTab('admin')">관리자 모드</button>
                 </div>
             </div>
         </div>
@@ -235,6 +238,7 @@
                     <p class="text-sm text-gray-500 mt-1">엑셀 파일을 업로드하여 동아리 명단을 초기화하거나 업데이트합니다.</p>
                 </div>
                 <div class="flex items-center gap-3 flex-wrap justify-end">
+                    <button onclick="showChangePwModal()" class="text-sm text-gray-600 hover:text-gray-800 font-medium mr-2 flex items-center"><i class="fa-solid fa-key mr-1"></i>비밀번호 변경</button>
                     <button onclick="showResetConfirm()" class="text-sm text-red-500 hover:text-red-700 font-medium mr-2 flex items-center"><i class="fa-solid fa-trash-can mr-1"></i>데이터 초기화</button>
                     <button onclick="downloadTemplate()" class="text-sm text-blue-600 hover:text-blue-800 underline mr-2">엑셀 양식 다운로드</button>
                     <label class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md cursor-pointer transition-colors shadow-sm text-sm font-medium flex items-center">
@@ -430,6 +434,41 @@
         </div>
     </div>
 
+    <!-- 관리자 인증 모달 -->
+    <div id="admin-login-modal" class="fixed inset-0 z-[250] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeAdminLoginModal()"></div>
+        <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                <i class="fa-solid fa-lock text-blue-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">관리자 인증</h3>
+            <p class="text-sm text-gray-500 mb-4">관리자 비밀번호를 입력해주세요.</p>
+            <input type="password" id="admin-pw-input" class="w-full rounded-md border border-gray-300 py-2 px-3 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center" placeholder="비밀번호 입력" onkeypress="if(event.key==='Enter') verifyAdminPassword()">
+            <p id="admin-pw-error" class="text-red-500 text-sm hidden mb-4">비밀번호가 일치하지 않습니다.</p>
+            <div class="flex gap-3 mt-4">
+                <button type="button" class="w-full py-2 bg-gray-200 text-gray-800 rounded-md font-medium" onclick="closeAdminLoginModal()">취소</button>
+                <button type="button" class="w-full py-2 bg-blue-600 text-white rounded-md font-medium" onclick="verifyAdminPassword()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 비밀번호 변경 모달 -->
+    <div id="change-pw-modal" class="fixed inset-0 z-[250] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeChangePwModal()"></div>
+        <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
+                <i class="fa-solid fa-key text-indigo-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">비밀번호 변경</h3>
+            <p class="text-sm text-gray-500 mb-4">새로운 관리자 비밀번호를 입력해주세요.</p>
+            <input type="password" id="new-pw-input" class="w-full rounded-md border border-gray-300 py-2 px-3 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center" placeholder="새 비밀번호 입력" onkeypress="if(event.key==='Enter') executeChangePw()">
+            <div class="flex gap-3">
+                <button type="button" class="w-full py-2 bg-gray-200 text-gray-800 rounded-md font-medium" onclick="closeChangePwModal()">취소</button>
+                <button type="button" class="w-full py-2 bg-indigo-600 text-white rounded-md font-medium" onclick="executeChangePw()">변경하기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Alert Modal -->
     <div id="custom-alert" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeAlert()"></div>
@@ -472,6 +511,75 @@
 
 
     <script>
+        let ADMIN_PW = "0000"; // 관리자 비밀번호 (기본값)
+        let isAdminAuthenticated = false;
+
+        function showAdminLoginModal() {
+            if (isAdminAuthenticated) {
+                switchTab('admin');
+                return;
+            }
+            document.getElementById('admin-pw-input').value = '';
+            document.getElementById('admin-pw-error').classList.add('hidden');
+            document.getElementById('admin-login-modal').classList.remove('hidden');
+            document.getElementById('admin-login-modal').classList.add('flex');
+            setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.add('hidden');
+            document.getElementById('admin-login-modal').classList.remove('flex');
+        }
+
+        function verifyAdminPassword() {
+            const input = document.getElementById('admin-pw-input').value;
+            if (input === ADMIN_PW) {
+                isAdminAuthenticated = true;
+                closeAdminLoginModal();
+                document.getElementById('tab-admin').classList.remove('hidden'); // 관리자 모드 탭 표시
+                switchTab('admin');
+            } else {
+                document.getElementById('admin-pw-error').classList.remove('hidden');
+            }
+        }
+
+        // 비밀번호 변경 기능
+        function showChangePwModal() {
+            document.getElementById('new-pw-input').value = '';
+            document.getElementById('change-pw-modal').classList.remove('hidden');
+            document.getElementById('change-pw-modal').classList.add('flex');
+            setTimeout(() => document.getElementById('new-pw-input').focus(), 100);
+        }
+
+        function closeChangePwModal() {
+            document.getElementById('change-pw-modal').classList.add('hidden');
+            document.getElementById('change-pw-modal').classList.remove('flex');
+        }
+
+        async function executeChangePw() {
+            const newPw = document.getElementById('new-pw-input').value.trim();
+            if (!newPw) {
+                showAlert('알림', '새 비밀번호를 입력해주세요.', 'error');
+                return;
+            }
+            
+            showLoading('비밀번호를 변경하는 중입니다...');
+            try {
+                const settingsRef = window.dbRef.doc(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-settings', 'admin-config');
+                // 저장
+                await window.dbRef.setDoc(settingsRef, { password: newPw }, { merge: true });
+                
+                ADMIN_PW = newPw; // 변수 즉시 업데이트
+                closeChangePwModal();
+                hideLoading();
+                showAlert('변경 완료', '관리자 비밀번호가 성공적으로 변경되었습니다.');
+            } catch(e) {
+                console.error(e);
+                hideLoading();
+                showAlert('오류', '비밀번호 변경 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
         const commonSafetyItems = [
             "축제장 내 이동 시 안전 및 질서 유지 수칙 숙지",
             "식음료 취식 시 위생 수칙 및 식중독 예방 숙지",
@@ -512,7 +620,7 @@
             "일일아티스탭": [
                 "스태프 비표 항시 패용 및 무단 근무지 이탈 엄금",
                 "관람객 동선 안내 시 친절하고 명확한 지시",
-                "무거운 물품 운반 시 요통 등 부상 주의",
+                "무거운 물품 운반 시 요통 전 부상 주의",
                 "긴급 상황 발생 시 초동 대처 및 신속 보고",
                 "지정된 휴식 시간 및 교대 근무 수칙 준수"
             ]
@@ -598,6 +706,11 @@
         }
 
         function switchTab(tab) {
+            if (tab === 'admin' && !isAdminAuthenticated) {
+                showAdminLoginModal();
+                return;
+            }
+
             const userView = document.getElementById('view-user');
             const adminView = document.getElementById('view-admin');
             const btnUser = document.getElementById('tab-user');
@@ -1568,6 +1681,81 @@
             document.getElementById('preview-modal').classList.add('hidden');
         }
 
+        async function downloadPDF() {
+            const filterCat = document.getElementById('filter-category').value;
+            if(filterCat === 'all') {
+                showAlert('알림', '특정 분야(예: 공연, 부스 등)를 먼저 선택한 후 PDF를 다운로드 해주세요.');
+                return;
+            }
+
+            const clubsToExport = window.appState.clubs.filter(c => c.category === filterCat && c.status === 'submitted');
+            if(clubsToExport.length === 0) {
+                showAlert('알림', '해당 분야에 제출완료된 확인서가 없습니다.');
+                return;
+            }
+
+            showLoading(`PDF 생성 중... (총 ${clubsToExport.length}건, 데이터가 많을 경우 시간이 소요됩니다)`);
+
+            // 1. 자동 여백(밀림 현상)의 핵심 원인인 스크롤 위치를 임시 고정
+            const currentScroll = window.scrollY;
+            window.scrollTo(0, 0);
+
+            const container = document.createElement('div');
+            // 2. 화면 밖으로 완벽히 밀어내어 사용자 화면에 백지가 뜨는 버그 방지
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '210mm';
+            container.style.backgroundColor = 'white';
+            container.style.color = 'black';
+
+            try {
+                for(let i=0; i<clubsToExport.length; i++) {
+                    const club = clubsToExport[i];
+                    let data = window.appState.submissions[club.submissionId];
+                    
+                    if(!data) {
+                        const docRef = window.dbRef.doc(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions', club.submissionId);
+                        const snap = await window.dbRef.getDoc(docRef);
+                        if(snap.exists()) {
+                            data = snap.data();
+                            window.appState.submissions[club.submissionId] = data;
+                        }
+                    }
+
+                    if(data) {
+                        const pageHtml = generatePrintPageHtml(data);
+                        const pageDiv = document.createElement('div');
+                        pageDiv.innerHTML = pageHtml;
+                        container.appendChild(pageDiv);
+                    }
+                }
+
+                document.body.appendChild(container);
+
+                const opt = {
+                    margin: 0, 
+                    filename: `안전교육확인서_${filterCat}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 800 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                await html2pdf().set(opt).from(container).save();
+
+            } catch (err) {
+                console.error(err);
+                showAlert('오류', 'PDF 생성 중 문제가 발생했습니다. 관리자에게 문의하세요.', 'error');
+            } finally {
+                if (container.parentNode) {
+                    document.body.removeChild(container);
+                }
+                // 3. 작업이 끝나면 원래 사용자가 보던 스크롤 위치로 원상복구
+                window.scrollTo(0, currentScroll);
+                hideLoading();
+            }
+        }
+
         function printDocument() {
             // 미리보기된 화면을 프린트 전용 영역으로 복사
             const printContainer = document.getElementById('print-container');
@@ -1586,6 +1774,7 @@
         window.openPreview = openPreview;
         window.closePreview = closePreview;
         window.printDocument = printDocument;
+        window.downloadPDF = downloadPDF;
 
     </script>
 </body>
