@@ -51,7 +51,7 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="./assets/index-DexYZC2k.js"></script>
+  <script type="module" crossorigin src="./assets/index-CT9brsce.js"></script>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
@@ -94,11 +94,12 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">분야 <span class="text-red-500">*</span></label>
                                 <select id="input-category" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" onchange="updateClubDropdowns()">
                                     <option value="">선택해주세요</option>
-                                    <option value="공연">공연</option>
-                                    <option value="부스">부스</option>
-                                    <option value="현장체험">현장체험</option>
+                                    <!-- 분야 변경 반영 -->
+                                    <option value="무대공연">무대공연</option>
+                                    <option value="부스운영">부스운영</option>
                                     <option value="모니터링단">모니터링단</option>
-                                    <option value="일일아티스탭">일일아티스탭</option>
+                                    <option value="일일 아티스탭">일일 아티스탭</option>
+                                    <option value="현장체험단">현장체험단</option>
                                 </select>
                             </div>
                             
@@ -108,6 +109,7 @@
                                 <div class="relative">
                                     <input type="text" id="input-club-search" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors disabled:bg-gray-100" placeholder="분야를 먼저 선택해주세요" disabled onfocus="showClubList()" onkeyup="filterClubList()" onblur="setTimeout(()=>hideClubList(), 200)">
                                     <input type="hidden" id="input-club">
+                                    <input type="hidden" id="input-member-count" value="0">
                                     <ul id="club-dropdown-list" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden mt-1"></ul>
                                 </div>
                                 <p class="text-xs text-gray-400 mt-1">※ 목록에 없다면 관리자에게 문의하세요.</p>
@@ -117,7 +119,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">소속 <span class="text-red-500">*</span></label>
-                                <input type="text" id="input-affiliation" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" placeholder="예: 시흥청소년수련관">
+                                <input type="text" id="input-affiliation" required readonly class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:outline-none bg-gray-100 text-gray-600 cursor-not-allowed" placeholder="동아리를 선택하면 자동 입력됩니다">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">행사명 <span class="text-red-500">*</span></label>
@@ -166,23 +168,7 @@
                             </div>
                         </div>
 
-                        <div class="border-t border-gray-100 pt-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">안전교육 증빙 사진 <span class="text-red-500">*</span></label>
-                            <div class="flex items-center justify-center w-full">
-                                <label for="input-photo" class="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6" id="photo-placeholder">
-                                        <i class="fa-solid fa-camera text-3xl text-gray-400 mb-3"></i>
-                                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">클릭하여 사진 업로드</span></p>
-                                        <p class="text-xs text-gray-500">자동으로 1MB 이하로 압축됩니다.</p>
-                                    </div>
-                                    <img id="photo-preview" class="hidden absolute inset-0 w-full h-full object-contain bg-black/5" />
-                                    <input id="input-photo" type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)" />
-                                </label>
-                            </div>
-                            <input type="hidden" id="photo-base64" required>
-                        </div>
-
-                        <div class="flex justify-end pt-4">
+                        <div class="flex justify-end pt-8">
                             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-md shadow-sm transition-colors flex items-center">
                                 다음 단계 <i class="fa-solid fa-arrow-right ml-2"></i>
                             </button>
@@ -192,13 +178,14 @@
 
                 <div id="form-page-2" class="hidden p-6 md:p-8 space-y-6">
                     <div class="bg-blue-50 p-4 rounded-md border border-blue-100 mb-4">
-                        <p class="text-sm text-blue-800"><i class="fa-solid fa-circle-info mr-2"></i>교육에 참석한 모든 인원의 이름, 연령, 성별을 선택하고 서명을 입력해주세요. 서명은 터치나 마우스를 이용해 직접 그려주시면 됩니다.</p>
+                        <p class="text-sm text-blue-800"><i class="fa-solid fa-circle-info mr-2"></i>등록된 최소 인원수만큼 기본 서명칸이 제공됩니다. 참석 인원이 더 많을 경우 '인원 추가하기' 버튼을 눌러 추가해주세요. 서명은 터치나 마우스를 이용해 직접 그려주시면 됩니다.</p>
                     </div>
 
                     <div id="signature-container" class="space-y-4">
                         <!-- Signatures will be generated here -->
                     </div>
 
+                    <!-- 인원 추가 버튼 복구 -->
                     <div class="flex justify-center mt-6">
                         <button type="button" onclick="addSignatureRow()" class="flex items-center text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-full transition-colors">
                             <i class="fa-solid fa-plus mr-2"></i> 인원 추가하기
@@ -333,11 +320,12 @@
                     <div class="flex gap-2 items-center flex-wrap">
                         <select id="filter-category" onchange="onFilterChange()" class="text-sm rounded-md border border-gray-300 py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500">
                             <option value="all">전체 분야</option>
-                            <option value="공연">공연</option>
-                            <option value="부스">부스</option>
-                            <option value="현장체험">현장체험</option>
+                            <!-- 필터 옵션도 변경 -->
+                            <option value="무대공연">무대공연</option>
+                            <option value="부스운영">부스운영</option>
                             <option value="모니터링단">모니터링단</option>
-                            <option value="일일아티스탭">일일아티스탭</option>
+                            <option value="일일 아티스탭">일일 아티스탭</option>
+                            <option value="현장체험단">현장체험단</option>
                         </select>
                         <select id="filter-status" onchange="onFilterChange()" class="text-sm rounded-md border border-gray-300 py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500">
                             <option value="all">전체 상태</option>
@@ -408,7 +396,7 @@
         </div>
     </div>
 
-    <!-- 전체 미리보기 및 인쇄용 모달 (추가됨) -->
+    <!-- 전체 미리보기 및 인쇄용 모달 -->
     <div id="preview-modal" class="fixed inset-0 z-[150] hidden">
         <div class="absolute inset-0 bg-gray-900 transition-opacity"></div>
         <div class="relative flex flex-col h-full w-full max-w-5xl mx-auto bg-gray-100 shadow-2xl">
@@ -588,22 +576,23 @@
             "지진 등 재난 발생 시 비상 대피로 및 행동요령 숙지"
         ];
 
+        // 분야 변경에 따른 특정 수칙
         const specificSafetyItems = {
-            "공연": [
+            "무대공연": [
                 "무대 오르내릴 시 미끄러짐 및 낙상 주의",
                 "무대 장치 및 조명, 음향 기기 임의 조작 엄금",
                 "대기실 내 화기 사용 엄금 및 청결 유지",
                 "공연 중 돌발 상황 발생 시 스태프 지시 이행",
                 "과도한 퍼포먼스로 인한 안전사고 방지 교육"
             ],
-            "부스": [
+            "부스운영": [
                 "부스 내 전열기구 사용 안전 수칙 준수",
                 "칼, 가위 등 날카로운 도구 사용 시 주의",
                 "체험객 밀집 시 동선 통제 및 안전거리 확보",
                 "부스 구조물 임의 변경 및 훼손 엄금",
                 "운영 종료 후 주변 정리정돈 및 쓰레기 분리수거"
             ],
-            "현장체험": [
+            "현장체험단": [
                 "야외 활동 시 온열질환 및 일사병 예방 조치",
                 "인솔자 지시 이행 및 지정 구역 이탈 엄금",
                 "위험 시설물 및 출입 금지 구역 파악",
@@ -617,7 +606,7 @@
                 "위험 요소 발견 시 즉각 안전요원에게 보고",
                 "객관적이고 안전한 위치에서 모니터링 수행"
             ],
-            "일일아티스탭": [
+            "일일 아티스탭": [
                 "스태프 비표 항시 패용 및 무단 근무지 이탈 엄금",
                 "관람객 동선 안내 시 친절하고 명확한 지시",
                 "무거운 물품 운반 시 요통 전 부상 주의",
@@ -734,15 +723,26 @@
         }
 
         function nextStep() {
-            const photoVal = document.getElementById('photo-base64').value;
-            if (!photoVal) {
-                showAlert('입력 오류', '안전교육 증빙 사진을 첨부해주세요.', 'error');
-                return;
-            }
-            
             const clubId = document.getElementById('input-club').value;
             if(!clubId) {
                 showAlert('입력 오류', '동아리를 검색하여 선택해주세요.', 'error');
+                return;
+            }
+
+            const memberCount = parseInt(document.getElementById('input-member-count').value, 10);
+            if (!memberCount || memberCount <= 0) {
+                showAlert('입력 오류', '동아리 최소 인원수 정보가 올바르지 않습니다. 엑셀을 확인하세요.', 'error');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('input[name="edu-check"]');
+            let allChecked = true;
+            checkboxes.forEach(cb => {
+                if (!cb.checked) allChecked = false;
+            });
+
+            if (checkboxes.length > 0 && !allChecked) {
+                showAlert('입력 오류', '안전교육 내용 확인(체크리스트) 항목을 모두 체크해주세요.', 'error');
                 return;
             }
 
@@ -750,6 +750,13 @@
             document.getElementById('form-page-2').classList.remove('hidden');
             document.getElementById('page-indicator').innerText = '2 / 2 페이지';
             
+            // 기존에 그려진 서명이 있으면 날리고 새롭게 기본 인원수만큼만 초기화
+            document.getElementById('signature-container').innerHTML = '';
+            window.appState.signaturePads = {};
+            window.signatureRowCount = 0;
+            
+            initSignatureRows(memberCount);
+
             setTimeout(() => {
                 Object.values(window.appState.signaturePads).forEach(pad => {
                     const rect = pad.canvas.parentElement.getBoundingClientRect();
@@ -775,10 +782,7 @@
             document.getElementById('input-event-name').value = "2026년 제11회 시흥시청소년동아리축제 SIYF";
             document.getElementById('input-schedule').value = "2026. 10. 17.(토)";
             
-            document.getElementById('photo-preview').classList.add('hidden');
-            document.getElementById('photo-preview').src = '';
-            document.getElementById('photo-placeholder').classList.remove('hidden');
-            document.getElementById('photo-base64').value = '';
+            document.getElementById('input-member-count').value = 0;
             
             document.getElementById('success-screen').classList.add('hidden');
             document.getElementById('submission-form').classList.remove('hidden');
@@ -787,7 +791,6 @@
             document.getElementById('signature-container').innerHTML = '';
             window.appState.signaturePads = {};
             window.signatureRowCount = 0;
-            initSignatureRows();
         }
 
         function updateClubDropdowns() {
@@ -800,6 +803,8 @@
             const selectedCat = catSelect.value;
             searchInput.value = '';
             hiddenIdInput.value = '';
+            document.getElementById('input-affiliation').value = '';
+            document.getElementById('input-member-count').value = 0;
             
             renderChecklist(selectedCat);
 
@@ -827,9 +832,11 @@
             renderClubSearchList();
         }
 
-        function selectClub(id, name) {
+        function selectClub(id, name, affiliation, memberCount) {
             document.getElementById('input-club').value = id;
             document.getElementById('input-club-search').value = name;
+            document.getElementById('input-affiliation').value = affiliation || '';
+            document.getElementById('input-member-count').value = memberCount || 0;
             hideClubList();
         }
 
@@ -861,7 +868,7 @@
                 const isSubmitted = club.status === 'submitted';
                 li.className = `px-4 py-3 text-sm cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-0 ${isSubmitted ? 'text-gray-400' : 'text-gray-900'}`;
                 li.innerHTML = club.clubName + (isSubmitted ? ' <span class="text-xs text-red-400 ml-1">(제출완료)</span>' : '');
-                li.onmousedown = () => selectClub(club.id, club.clubName);
+                li.onmousedown = () => selectClub(club.id, club.clubName, club.affiliation, club.memberCount);
                 listEl.appendChild(li);
             });
         }
@@ -901,63 +908,7 @@
     </script>
 
     <script>
-        function handlePhotoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!file.type.match('image.*')) {
-                showAlert('파일 오류', '이미지 파일만 업로드 가능합니다.', 'error');
-                event.target.value = '';
-                return;
-            }
-
-            showLoading('이미지 최적화 중...');
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const MAX_WIDTH = 1200;
-                    const MAX_HEIGHT = 1200;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height && width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    } else if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    let quality = 0.8;
-                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    
-                    while (dataUrl.length > 1300000 && quality > 0.1) {
-                        quality -= 0.1;
-                        dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    }
-
-                    const preview = document.getElementById('photo-preview');
-                    preview.src = dataUrl;
-                    preview.classList.remove('hidden');
-                    document.getElementById('photo-placeholder').classList.add('hidden');
-                    document.getElementById('photo-base64').value = dataUrl;
-                    
-                    hideLoading();
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function initSignatureRows(count = 5) {
+        function initSignatureRows(count) {
             for(let i=0; i<count; i++) {
                 addSignatureRow();
             }
@@ -1087,6 +1038,7 @@
             const clubDataObj = window.appState.clubs.find(c => c.id === clubId);
             const clubName = clubDataObj ? clubDataObj.clubName : "알수없음";
             const category = document.getElementById('input-category').value;
+            const memberCount = parseInt(document.getElementById('input-member-count').value, 10);
 
             const checkboxes = document.querySelectorAll('input[name="edu-check"]');
             let allChecked = true;
@@ -1129,12 +1081,13 @@
             });
 
             if (partialErrors) {
-                showAlert('입력 오류', '이름, 연령, 성별, 서명 중 누락 항목이 있는 행이 있습니다. 모두 입력하거나 내용 지우기 버튼을 눌러 비워주세요.', 'error');
+                showAlert('입력 오류', '이름, 연령, 성별, 서명 중 누락 항목이 있는 행이 있습니다. 모두 채우거나 지우기 버튼으로 비워주세요.', 'error');
                 return;
             }
 
-            if(validSigs === 0) {
-                showAlert('입력 오류', '최소 1명 이상의 참석자 정보(이름, 연령, 성별, 서명)를 모두 입력해야 합니다.', 'error');
+            // 최소 인원수 검증 로직 복구
+            if(validSigs < memberCount) {
+                showAlert('입력 오류', `동아리 최소 인원수(${memberCount}명) 만큼 참석자 정보(이름, 연령, 성별, 서명)를 모두 입력해야 합니다.`, 'error');
                 return;
             }
 
@@ -1143,6 +1096,7 @@
                 clubName: clubName,
                 category: category,
                 affiliation: document.getElementById('input-affiliation').value.trim(),
+                memberCount: memberCount, // 데이터에 인원수 포함
                 eventName: document.getElementById('input-event-name').value.trim(),
                 venue: document.getElementById('input-venue').value.trim(),
                 eduLocation: document.getElementById('input-edu-location').value.trim(),
@@ -1150,7 +1104,6 @@
                 time: document.getElementById('input-time').value.trim(),
                 schedule: document.getElementById('input-schedule').value.trim(),
                 eduChecklist: checkedItems,
-                photoBase64: document.getElementById('photo-base64').value,
                 signatures: signatures,
                 submittedAt: new Date().toISOString()
             };
@@ -1187,10 +1140,10 @@
     <script>
         function downloadTemplate() {
             const ws_data = [
-                ["분야", "동아리명"],
-                ["공연", "댄스부A"],
-                ["부스", "과학실험부"],
-                ["현장체험", "사진동아리"]
+                ["분야", "소속", "동아리명", "인원수"],
+                ["무대공연", "시흥청소년수련관", "댄스부A", 5],
+                ["부스운영", "학교밖청소년지원센터", "과학실험부", 3],
+                ["모니터링단", "시흥시청", "청소년위원회", 4]
             ];
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
             const wb = XLSX.utils.book_new();
@@ -1213,9 +1166,9 @@
                     const worksheet = workbook.Sheets[firstSheetName];
                     const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
 
-                    if(json.length < 2 || json[0][0] !== "분야" || json[0][1] !== "동아리명") {
+                    if(json.length < 2 || json[0][0] !== "분야" || json[0][1] !== "소속" || json[0][2] !== "동아리명" || json[0][3] !== "인원수") {
                         hideLoading();
-                        showAlert('양식 오류', '엑셀 파일의 1열은 "분야", 2열은 "동아리명" 이어야 합니다.', 'error');
+                        showAlert('양식 오류', '엑셀 파일의 1열은 "분야", 2열은 "소속", 3열은 "동아리명", 4열은 "인원수" 이어야 합니다.', 'error');
                         return;
                     }
 
@@ -1224,16 +1177,20 @@
 
                     for(let i=1; i<json.length; i++) {
                         const row = json[i];
-                        if(row.length >= 2 && row[0] && row[1]) {
+                        if(row.length >= 4 && row[0] && row[1] && row[2] && row[3]) {
                             const category = String(row[0]).trim();
-                            const clubName = String(row[1]).trim();
+                            const affiliation = String(row[1]).trim();
+                            const clubName = String(row[2]).trim();
+                            const memberCount = parseInt(row[3], 10) || 0;
                             
-                            const validCats = ["공연", "부스", "현장체험", "모니터링단", "일일아티스탭"];
-                            if(validCats.includes(category)) {
+                            const validCats = ["무대공연", "부스운영", "모니터링단", "일일 아티스탭", "현장체험단"];
+                            if(validCats.includes(category) && memberCount > 0) {
                                 const docRef = window.dbRef.doc(window.dbRef.collection(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-clubs'));
                                 batch.set(docRef, {
                                     category: category,
+                                    affiliation: affiliation,
                                     clubName: clubName,
+                                    memberCount: memberCount,
                                     status: 'pending',
                                     createdAt: new Date().toISOString()
                                 });
@@ -1246,7 +1203,7 @@
                         await batch.commit();
                         showAlert('업로드 성공', `총 ${validCount}개의 동아리 데이터가 추가되었습니다.`);
                     } else {
-                        showAlert('알림', '유효한 데이터가 없습니다.');
+                        showAlert('알림', '유효한 데이터가 없거나 인원수가 0인 항목만 있습니다.');
                     }
                     
                 } catch(err) {
@@ -1373,7 +1330,7 @@
 
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${club.category}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${club.clubName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${club.clubName} <span class="text-xs text-gray-500 ml-1">(${club.memberCount}명)</span></td>
                     <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dateStr}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${btnHtml}</td>
@@ -1485,13 +1442,6 @@
                         </div>
 
                         <div>
-                            <h4 class="font-bold text-gray-900 border-b pb-2 mb-3">안전교육 증빙 사진</h4>
-                            <div class="bg-gray-100 rounded-lg p-2 flex justify-center">
-                                <img src="${data.photoBase64}" class="max-h-64 object-contain rounded shadow-sm" alt="교육사진">
-                            </div>
-                        </div>
-
-                        <div>
                             <h4 class="font-bold text-gray-900 border-b pb-2 mb-3">참석자 정보 및 서명 (${data.signatures.length}명)</h4>
                             ${sigsHtml}
                         </div>
@@ -1593,28 +1543,16 @@
                         </tr>
                     </table>
 
-                    <!-- 교육 내용과 증빙 사진 나란히 배치 (5:5) 높이 증가 -->
-                    <div style="display: flex; gap: 15px; margin-bottom: 15px; height: 280px;">
-                        <div style="flex: 1; border: 1px solid #000; display:flex; flex-direction:column;">
-                            <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
-                                안전교육 내용 확인 결과
-                            </div>
-                            <div style="padding:10px; flex-grow: 1; overflow: hidden; background:#fafafa;">
-                                ${checklistHtml}
-                            </div>
+                    <div style="border: 1px solid #000; margin-bottom: 15px;">
+                        <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
+                            안전교육 내용 확인 결과
                         </div>
-
-                        <div style="flex: 1; border: 1px solid #000; display:flex; flex-direction:column;">
-                            <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
-                                안전교육 증빙 사진
-                            </div>
-                            <div style="padding:5px; text-align:center; flex-grow: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background:#fafafa;">
-                                <img src="${data.photoBase64}" style="max-height: 100%; max-width: 100%; object-fit: contain;">
-                            </div>
+                        <div style="padding:10px; background:#fafafa;">
+                            ${checklistHtml}
                         </div>
                     </div>
 
-                    <div style="border: 1px solid #000; display:flex; flex-direction:column; flex-grow: 1; max-height: 410px;">
+                    <div style="border: 1px solid #000; display:flex; flex-direction:column; flex-grow: 1; max-height: 550px;">
                         <div style="background:#f0f0f0; padding:6px; font-weight:bold; font-size:13px; text-align:center; border-bottom: 1px solid #000;">
                             참석자 명단 및 서명 (총 ${data.signatures.length}명)
                         </div>
@@ -1630,7 +1568,7 @@
         async function openPreview() {
             const filterCat = document.getElementById('filter-category').value;
             if(filterCat === 'all') {
-                showAlert('알림', '특정 분야(예: 공연, 부스 등)를 먼저 선택한 후 미리보기를 실행해주세요.');
+                showAlert('알림', '특정 분야를 먼저 선택한 후 미리보기를 실행해주세요.');
                 return;
             }
 
@@ -1681,81 +1619,6 @@
             document.getElementById('preview-modal').classList.add('hidden');
         }
 
-        async function downloadPDF() {
-            const filterCat = document.getElementById('filter-category').value;
-            if(filterCat === 'all') {
-                showAlert('알림', '특정 분야(예: 공연, 부스 등)를 먼저 선택한 후 PDF를 다운로드 해주세요.');
-                return;
-            }
-
-            const clubsToExport = window.appState.clubs.filter(c => c.category === filterCat && c.status === 'submitted');
-            if(clubsToExport.length === 0) {
-                showAlert('알림', '해당 분야에 제출완료된 확인서가 없습니다.');
-                return;
-            }
-
-            showLoading(`PDF 생성 중... (총 ${clubsToExport.length}건, 데이터가 많을 경우 시간이 소요됩니다)`);
-
-            // 1. 자동 여백(밀림 현상)의 핵심 원인인 스크롤 위치를 임시 고정
-            const currentScroll = window.scrollY;
-            window.scrollTo(0, 0);
-
-            const container = document.createElement('div');
-            // 2. 화면 밖으로 완벽히 밀어내어 사용자 화면에 백지가 뜨는 버그 방지
-            container.style.position = 'absolute';
-            container.style.left = '-9999px';
-            container.style.top = '0';
-            container.style.width = '210mm';
-            container.style.backgroundColor = 'white';
-            container.style.color = 'black';
-
-            try {
-                for(let i=0; i<clubsToExport.length; i++) {
-                    const club = clubsToExport[i];
-                    let data = window.appState.submissions[club.submissionId];
-                    
-                    if(!data) {
-                        const docRef = window.dbRef.doc(window.dbInstance, 'artifacts', window.appId, 'public', 'data', 'safety-form-submissions', club.submissionId);
-                        const snap = await window.dbRef.getDoc(docRef);
-                        if(snap.exists()) {
-                            data = snap.data();
-                            window.appState.submissions[club.submissionId] = data;
-                        }
-                    }
-
-                    if(data) {
-                        const pageHtml = generatePrintPageHtml(data);
-                        const pageDiv = document.createElement('div');
-                        pageDiv.innerHTML = pageHtml;
-                        container.appendChild(pageDiv);
-                    }
-                }
-
-                document.body.appendChild(container);
-
-                const opt = {
-                    margin: 0, 
-                    filename: `안전교육확인서_${filterCat}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 800 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                await html2pdf().set(opt).from(container).save();
-
-            } catch (err) {
-                console.error(err);
-                showAlert('오류', 'PDF 생성 중 문제가 발생했습니다. 관리자에게 문의하세요.', 'error');
-            } finally {
-                if (container.parentNode) {
-                    document.body.removeChild(container);
-                }
-                // 3. 작업이 끝나면 원래 사용자가 보던 스크롤 위치로 원상복구
-                window.scrollTo(0, currentScroll);
-                hideLoading();
-            }
-        }
-
         function printDocument() {
             // 미리보기된 화면을 프린트 전용 영역으로 복사
             const printContainer = document.getElementById('print-container');
@@ -1774,7 +1637,6 @@
         window.openPreview = openPreview;
         window.closePreview = closePreview;
         window.printDocument = printDocument;
-        window.downloadPDF = downloadPDF;
 
     </script>
 </body>
