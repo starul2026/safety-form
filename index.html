@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>동아리축제 안전교육 확인서 관리</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 엑셀 및 PDF 라이브러리 추가 -->
+    <!-- 엑셀 라이브러리 추가 -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
@@ -94,7 +93,6 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">분야 <span class="text-red-500">*</span></label>
                                 <select id="input-category" required class="w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" onchange="updateClubDropdowns()">
                                     <option value="">선택해주세요</option>
-                                    <!-- 분야 변경 반영 -->
                                     <option value="무대공연">무대공연</option>
                                     <option value="부스운영">부스운영</option>
                                     <option value="모니터링단">모니터링단</option>
@@ -185,7 +183,6 @@
                         <!-- Signatures will be generated here -->
                     </div>
 
-                    <!-- 인원 추가 버튼 복구 -->
                     <div class="flex justify-center mt-6">
                         <button type="button" onclick="addSignatureRow()" class="flex items-center text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-full transition-colors">
                             <i class="fa-solid fa-plus mr-2"></i> 인원 추가하기
@@ -320,7 +317,6 @@
                     <div class="flex gap-2 items-center flex-wrap">
                         <select id="filter-category" onchange="onFilterChange()" class="text-sm rounded-md border border-gray-300 py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500">
                             <option value="all">전체 분야</option>
-                            <!-- 필터 옵션도 변경 -->
                             <option value="무대공연">무대공연</option>
                             <option value="부스운영">부스운영</option>
                             <option value="모니터링단">모니터링단</option>
@@ -576,7 +572,6 @@
             "지진 등 재난 발생 시 비상 대피로 및 행동요령 숙지"
         ];
 
-        // 분야 변경에 따른 특정 수칙
         const specificSafetyItems = {
             "무대공연": [
                 "무대 오르내릴 시 미끄러짐 및 낙상 주의",
@@ -757,6 +752,7 @@
             
             initSignatureRows(memberCount);
 
+            // 초기 렌더링에 맞게 캔버스 컨텍스트 초기화 대기
             setTimeout(() => {
                 Object.values(window.appState.signaturePads).forEach(pad => {
                     const rect = pad.canvas.parentElement.getBoundingClientRect();
@@ -955,10 +951,15 @@
             rowDiv.innerHTML = inputHtml;
             container.appendChild(rowDiv);
 
+            // 중요: DOM에 엘리먼트가 완전히 마운트된 직후에 컨텍스트 사이즈를 강제로 맞춰주어야 
+            // 나중에 동적으로 추가된 캔버스에서도 터치 위치가 어긋나지 않습니다.
             setTimeout(() => {
                 const canvas = document.getElementById(`sig-canvas-${rowIdx}`);
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = 100;
                 setupCanvas(canvas, rowIdx);
-            }, 0);
+            }, 50);
         }
 
         function setupCanvas(canvas, idx) {
@@ -972,17 +973,23 @@
             window.appState.signaturePads[idx] = { canvas, ctx, hasDrawn: false };
 
             const getPos = (e) => {
+                // 실시간으로 캔버스의 정확한 위치와 스케일을 다시 계산하여 터치 오차 방지
                 const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+                
                 return {
-                    x: clientX - rect.left,
-                    y: clientY - rect.top
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
                 };
             };
 
             const startDrawing = (e) => {
-                e.preventDefault();
+                // 스크롤 방지
+                if(e.cancelable) e.preventDefault();
                 isDrawing = true;
                 window.appState.signaturePads[idx].hasDrawn = true;
                 const pos = getPos(e);
@@ -992,14 +999,14 @@
 
             const draw = (e) => {
                 if (!isDrawing) return;
-                e.preventDefault();
+                if(e.cancelable) e.preventDefault();
                 const pos = getPos(e);
                 ctx.lineTo(pos.x, pos.y);
                 ctx.stroke();
             };
 
             const stopDrawing = (e) => {
-                if(e) e.preventDefault();
+                if(e && e.cancelable) e.preventDefault();
                 isDrawing = false;
                 ctx.closePath();
             };
@@ -1009,9 +1016,11 @@
             canvas.addEventListener('mouseup', stopDrawing);
             canvas.addEventListener('mouseout', stopDrawing);
 
+            // 모바일 터치 이벤트 최적화
             canvas.addEventListener('touchstart', startDrawing, { passive: false });
             canvas.addEventListener('touchmove', draw, { passive: false });
             canvas.addEventListener('touchend', stopDrawing, { passive: false });
+            canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
         }
 
         function clearSignature(idx) {
@@ -1085,7 +1094,6 @@
                 return;
             }
 
-            // 최소 인원수 검증 로직 복구
             if(validSigs < memberCount) {
                 showAlert('입력 오류', `동아리 최소 인원수(${memberCount}명) 만큼 참석자 정보(이름, 연령, 성별, 서명)를 모두 입력해야 합니다.`, 'error');
                 return;
@@ -1096,7 +1104,7 @@
                 clubName: clubName,
                 category: category,
                 affiliation: document.getElementById('input-affiliation').value.trim(),
-                memberCount: memberCount, // 데이터에 인원수 포함
+                memberCount: memberCount,
                 eventName: document.getElementById('input-event-name').value.trim(),
                 venue: document.getElementById('input-venue').value.trim(),
                 eduLocation: document.getElementById('input-edu-location').value.trim(),
